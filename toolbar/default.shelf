@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <toolshelf name="walterh" label="walterh">
+    <memberTool name="objmerge"/>
+    <memberTool name="make_flipbook"/>
+    <memberTool name="freecam"/>
+    <memberTool name="tool_3"/>
+  </toolshelf>
+
+  <tool name="objmerge" label="Obj Merge" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[# Object Merge shortcut for currectly selected node in network editor
+
+try:
+    nodes = hou.selectedNodes()
+except:
+    hou.ui.displayMessage("Please select a node", severity=hou.severityType.Warning)
+    exit()
+    
+if nodes[0].type().category().name() != 'Sop':
+    hou.ui.displayMessage("Please select a SOP node", severity=hou.severityType.Warning)
+    exit()
+
+clipboard = []
+merges = []
+position = hou.Vector2()
+
+for i, node in enumerate(nodes):
+    merges.append(node.parent().createNode('object_merge', 'merge_{}'.format(node.name())))
+    n_merge = merges[-1]
+    
+    if i == 0:
+        position = node.position()
+
+    position += hou.Vector2(3, 0)
+    n_merge.setPosition(position)
+        
+    n_merge.parm('objpath1').set(node.path())
+    clipboard.append(n_merge)
+
+
+hou.copyNodesToClipboard(clipboard)
+hou.ui.setStatusMessage("Copied {} to clipboard".format(', '.join([x.name() for x in clipboard])), severity=hou.severityType.Message) 
+
+for merge in merges:
+    merge.destroy()]]></script>
+  </tool>
+
+  <tool name="make_flipbook" label="Make Flipbook" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[from time import gmtime, strftime
+
+# Filename
+default_filename = strftime("screenshot_%d_%b_%Y_%H_%M_%S.jpg", gmtime())
+filename = hou.ui.selectFile(title="Select Screenshot File", default_value=default_filename, file_type=hou.fileType.Image)]]></script>
+  </tool>
+
+  <tool name="freecam" label="Freecam" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[# Free Cam Script created by Johannes Heintz
+def freeCam():
+    selected = hou.selectedNodes()[0]
+    newCam = hou.node('/obj').createNode('cam', selected.name() + '_baked')
+    hou.setFrame(int(hou.playbar.playbackRange()[0]))
+    newCam.parmTuple("res").set(selected.parmTuple("res").eval())
+    scale = float(hou.ui.readInput("scale", initial_contents="1")[1])
+    
+    for f in range(int(hou.playbar.playbackRange()[0]), int(hou.playbar.playbackRange()[1]) + 1):
+        hou.setFrame(f)
+        transform = selected.worldTransform()
+        explode = transform.explode()
+        translate = explode["translate"] * scale
+        rotate = explode["rotate"]
+        newCam.parm("tx").setKeyframe(hou.Keyframe(translate[0]))
+        newCam.parm("ty").setKeyframe(hou.Keyframe(translate[1]))
+        newCam.parm("tz").setKeyframe(hou.Keyframe(translate[2]))   
+        newCam.parm("rx").setKeyframe(hou.Keyframe(rotate[0]))
+        newCam.parm("ry").setKeyframe(hou.Keyframe(rotate[1]))
+        newCam.parm("rz").setKeyframe(hou.Keyframe(rotate[2]))
+        newCam.parm("focal").setKeyframe(hou.Keyframe(selected.parm("focal").eval()))
+        newCam.parm("focus").setKeyframe(hou.Keyframe(selected.parm("focus").eval() * scale))
+freeCam()]]></script>
+  </tool>
+
+  <tool name="tool_3" label="Toggle Update" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[if hou.ui.updateMode() == hou.updateMode.AutoUpdate:
+    hou.ui.setUpdateMode(hou.updateMode.Manual)
+else:
+    hou.ui.setUpdateMode(hou.updateMode.AutoUpdate)]]></script>
+  </tool>
+
+  <shelfSetEdit name="shelf_set_1" fileLocation="/tba/apps/houdini/linux/18.5/18.5.351/houdini/toolbar/ShelfDefinitions.shelf">
+    <addMemberToolshelf name="walterh" inPosition="17"/>
+  </shelfSetEdit>
+</shelfDocument>
