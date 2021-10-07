@@ -10,6 +10,7 @@
     <memberTool name="make_flipbook"/>
     <memberTool name="freecam"/>
     <memberTool name="tool_3"/>
+    <memberTool name="hda2subnet"/>
   </toolshelf>
 
   <tool name="objmerge" label="Obj Merge" icon="PLASMA_App">
@@ -89,6 +90,30 @@ freeCam()]]></script>
     hou.ui.setUpdateMode(hou.updateMode.Manual)
 else:
     hou.ui.setUpdateMode(hou.updateMode.AutoUpdate)]]></script>
+  </tool>
+
+  <tool name="hda2subnet" label="HDA2Subnet" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA["""
+Convert an HDA to a subnet
+"""
+
+hda_node = hou.selectedNodes()[0]
+sn_node = hda_node.parent().createNode('subnet', hda_node.name())
+
+pg = hda_node.parmTemplateGroup()
+hda_children = hda_node.children()
+outputs = hda_node.outputs()
+
+hou.copyNodesTo(hda_children, sn_node)
+sn_node.setParmTemplateGroup(pg)
+
+old_name = hda_node.name()
+
+hda_node.destroy()
+sn_node.setName(old_name)
+
+for o in outputs:
+    o.setInput(0, sn_node)]]></script>
   </tool>
 
   <shelfSetEdit name="shelf_set_1" fileLocation="/tba/apps/houdini/linux/18.5/18.5.351/houdini/toolbar/ShelfDefinitions.shelf">
